@@ -8,11 +8,18 @@ if [[ -n "$OCI_USER" && -n "$OCI_TENANCY" && -n "$OCI_FINGERPRINT" && -n "$OCI_R
     OCI_KEY="$OCI_DIR/oci_api_key.pem"
     mkdir -p "$OCI_DIR"
 
+    echo "[调试] OCI_PRIVATE_KEY_BASE64 长度: ${#OCI_PRIVATE_KEY_BASE64}"
+    echo "[调试] OCI_PRIVATE_KEY 长度: ${#OCI_PRIVATE_KEY}"
+
     # 写入私钥
     if [[ -n "$OCI_PRIVATE_KEY_BASE64" ]]; then
-        echo "$OCI_PRIVATE_KEY_BASE64" | base64 -d > "$OCI_KEY"
+        echo "[调试] 使用 base64 解码私钥"
+        echo "$OCI_PRIVATE_KEY_BASE64" | base64 -d > "$OCI_KEY" 2>&1
     elif [[ -n "$OCI_PRIVATE_KEY" ]]; then
-        printf '%s\n' "$OCI_PRIVATE_KEY" > "$OCI_KEY"
+        echo "[调试] 使用原文私钥"
+        printf '%s\n' "$OCI_PRIVATE_KEY" > "$OCI_KEY" 2>&1
+    else
+        echo "[错误] OCI_PRIVATE_KEY_BASE64 和 OCI_PRIVATE_KEY 都为空！"
     fi
 
     # 写入配置
@@ -24,11 +31,11 @@ fingerprint=$OCI_FINGERPRINT
 region=$OCI_REGION
 key_file=$OCI_KEY
 EOF
-    chmod 600 "$OCI_DIR/config" "$OCI_KEY"
+    chmod 600 "$OCI_DIR/config" "$OCI_KEY" 2>/dev/null
     export OCI_CLI_CONFIG_FILE="$OCI_DIR/config"
+    echo "[调试] /tmp/.oci 目录内容:"
+    ls -la "$OCI_DIR/" 2>&1
     echo "[初始化] OCI 配置文件已生成到 $OCI_DIR"
-    echo "[调试] 私钥文件大小: $(wc -c < "$OCI_KEY") 字节"
-    echo "[调试] 私钥首行: $(head -1 "$OCI_KEY")"
 fi
 
 # ============ 从环境变量读取配置 ============
