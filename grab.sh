@@ -4,25 +4,31 @@
 
 # ============ 自动生成 OCI 配置文件 ============
 if [[ -n "$OCI_USER" && -n "$OCI_TENANCY" && -n "$OCI_FINGERPRINT" && -n "$OCI_REGION" ]]; then
-    mkdir -p ~/.oci
-    cat > ~/.oci/config <<EOF
+    OCI_DIR="/tmp/.oci"
+    OCI_KEY="$OCI_DIR/oci_api_key.pem"
+    mkdir -p "$OCI_DIR"
+
+    # 写入私钥
+    if [[ -n "$OCI_PRIVATE_KEY_BASE64" ]]; then
+        echo "$OCI_PRIVATE_KEY_BASE64" | base64 -d > "$OCI_KEY"
+    elif [[ -n "$OCI_PRIVATE_KEY" ]]; then
+        printf '%s\n' "$OCI_PRIVATE_KEY" > "$OCI_KEY"
+    fi
+
+    # 写入配置
+    cat > "$OCI_DIR/config" <<EOF
 [DEFAULT]
 user=$OCI_USER
 tenancy=$OCI_TENANCY
 fingerprint=$OCI_FINGERPRINT
 region=$OCI_REGION
-key_file=/root/.oci/oci_api_key.pem
+key_file=$OCI_KEY
 EOF
-    # 支持 base64 编码的私钥（环境变量不丢失换行符）
-    if [[ -n "$OCI_PRIVATE_KEY_BASE64" ]]; then
-        echo "$OCI_PRIVATE_KEY_BASE64" | base64 -d > ~/.oci/oci_api_key.pem
-    elif [[ -n "$OCI_PRIVATE_KEY" ]]; then
-        printf '%s\n' "$OCI_PRIVATE_KEY" > ~/.oci/oci_api_key.pem
-    fi
-    chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
-    echo "[初始化] OCI 配置文件已从环境变量生成"
-    echo "[调试] 私钥文件大小: $(wc -c < ~/.oci/oci_api_key.pem) 字节"
-    echo "[调试] 私钥首行: $(head -1 ~/.oci/oci_api_key.pem)"
+    chmod 600 "$OCI_DIR/config" "$OCI_KEY"
+    export OCI_CLI_CONFIG_FILE="$OCI_DIR/config"
+    echo "[初始化] OCI 配置文件已生成到 $OCI_DIR"
+    echo "[调试] 私钥文件大小: $(wc -c < "$OCI_KEY") 字节"
+    echo "[调试] 私钥首行: $(head -1 "$OCI_KEY")"
 fi
 
 # ============ 从环境变量读取配置 ============
