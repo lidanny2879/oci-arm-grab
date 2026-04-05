@@ -2,6 +2,22 @@
 # OCI 免费 ARM 实例自动抢机脚本（Docker 版）
 # 所有配置通过环境变量传入
 
+# ============ 自动生成 OCI 配置文件 ============
+if [[ -n "$OCI_USER" && -n "$OCI_TENANCY" && -n "$OCI_FINGERPRINT" && -n "$OCI_REGION" && -n "$OCI_PRIVATE_KEY" ]]; then
+    mkdir -p ~/.oci
+    cat > ~/.oci/config <<EOF
+[DEFAULT]
+user=$OCI_USER
+tenancy=$OCI_TENANCY
+fingerprint=$OCI_FINGERPRINT
+region=$OCI_REGION
+key_file=/root/.oci/oci_api_key.pem
+EOF
+    echo "$OCI_PRIVATE_KEY" > ~/.oci/oci_api_key.pem
+    chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
+    echo "[初始化] OCI 配置文件已从环境变量生成"
+fi
+
 # ============ 从环境变量读取配置 ============
 COMPARTMENT_ID="${OCI_COMPARTMENT_ID}"
 SUBNET_ID="${OCI_SUBNET_ID}"
